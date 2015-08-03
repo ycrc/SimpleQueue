@@ -37,7 +37,7 @@ def defqueue(walltime):
 # Set cluster dependent values
 sq_python_dir = os.environ.get('SQ_PYTHON_DIR')
 sq_nws_dir = os.environ.get('SQ_NWS_DIR')
-modload = 'module load Langs/GCC/4.8.2 MPI/OpenMPI/1.8.1\nexport SQ_PYTHON_DIR="%s"\nexport SQ_NWS_DIR="%s"\n' % (sq_python_dir, sq_nws_dir)
+modload = 'module purge\nmodule load Langs/GCC/4.8.2 MPI/OpenMPI/1.8.1-gcc\nexport SQ_PYTHON_DIR="%s"\nexport SQ_NWS_DIR="%s"\n' % (sq_python_dir, sq_nws_dir)
 
 opts = optparse.OptionParser(usage='''%prog OPTIONS TaskFile
 
@@ -65,6 +65,9 @@ opts.add_option('-p', '--ptile', type='int', dest='ptile',
   help='Number of processors to request per node.')
 opts.add_option('-t', '--tpn', type='int', dest='tpn',
   help='Maximum number of concurrent tasks per node. Not required.')
+opts.add_option('-M', type='int', dest='mem', default=5120,
+  help='Per-slot memory in MB to request. Not required. '
+       'Defaults to 5120.')
 opts.add_option('-W', '--walltime', dest='walltime', default='1:00',
   help='Walltime to request for the LSF Job in form HH:MM. Not required. Defaults to %default.')
 opts.add_option('-q', '--queue', dest='queue',
@@ -90,10 +93,12 @@ jobFile = pArgs[0]
   #BSUB -n %(procs)d
   #BSUB -R "span[%(spanspec)s]"
   #BSUB -W %(walltime)s
+  #BSUB -M %(mem)s
   #BSUB -oo LSF_%(title)s_out.txt
 
 title = oArgs.name
 procs = oArgs.procs
+mem = oArgs.mem
 
 walltime = oArgs.walltime
 walltimev = walltime.split(":")

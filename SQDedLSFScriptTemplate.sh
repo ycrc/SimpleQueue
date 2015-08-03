@@ -4,6 +4,7 @@
 #BSUB -n %(procs)d
 #BSUB -R "span[%(spanspec)s]"
 #BSUB -W %(walltime)s
+#BSUB -M %(mem)s
 #BSUB -oo LSF_%(title)s_out.txt
 
 %(modload)s

@@ -64,7 +64,7 @@ elif domain == 'bulldogl':
     modload = 'module load MPI/OpenMPI/1.4.4\nexport SQ_PYTHON_DIR="%s"\n' % sq_python_dir
 elif domain == 'omega':
     defaultmempernode = 35
-    modload = 'module load MPI/OpenMPI/1.4.4\nexport SQ_PYTHON_DIR="%s"\n' % sq_python_dir
+    modload = 'module unload MPI Langs Compilers\nmodule load MPI/OpenMPI/1.4.4\nexport SQ_PYTHON_DIR="%s"\n' % sq_python_dir
 elif domain is None:
     sys.stderr.write('Warning: DOMAIN variable is not set\n')
     defaultmempernode = 15
