@@ -1,0 +1,95 @@
+INTRODUCTION:
+
+This directory contains a tool called SimpleQueue, version 3.0, which
+can be used to run large numbers of individual tasks in a convenient
+fashion on the FAS clusters.  
+
+The original version of SimpleQueue was developed by Nick Carriero and
+Rob Bjornson for use on BulldogI and BulldogC.  This version is the
+first to use the mpirun command rather than ssh to start the worker
+processes.  We believe that this will decrease the chances of startup
+and "rogue" worker problems.
+
+Another new feature in version 3.0 is the "Drain" operation which can be
+added to the task file.  If you add the following line to your task
+file:
+
+#SQ_OP DRAIN
+
+then none of the subsequent tasks will be executed until all of the
+previous tasks have been completed.  This allows you to include a task
+in your task file that post-processes all previous task results, for
+example.  Without the "Drain" operation, there is no guarantee that all
+of the previous tasks have completed, which could cause the
+post-processing task to fail, possibly silently and non-repeatably.
+
+
+USAGE:
+
+To use SimpleQueue, you first create a list of single-node tasks in a
+"task file". Each line of the task file corresponds to a single task.
+Usually, the tasks are serial single-cpu tasks, but you can run
+single-node multi-cpu tasks as well. (In that case, you will need to
+specify the maximum number of concurrent tasks to run on each cluster
+node so that nodes are not over-committed.) On each line, you will need
+to include any necessary cd command to change to the proper directory,
+and you may specify any number of commands separated by semicolons
+(";").  Commands may be shell commands or executable files or shell
+scripts, along with any required arguments. 
+
+Once you have created the task file, you use the sqCreateScript command
+to create a PBS script that you can submit to the batch queuing system
+for the cluster. At a minimum, you must execute:
+
+  $ module load Tools/SimpleQueue/3.0
+  $ sqCreateScript TaskFile > runsq
+
+where "TaskFile" is the name of the task file you created, and "runsq"
+is the name of the PBS script you are creating.  sqCreateScript accepts
+a number of optional arguments that allow you to specify most PBS
+job-related queue limits, as well as the maximum number of concurrent
+tasks per node that SimpleQueue should schedule. More information on
+options may be obtained by running sqCreateScript without any arguments.
+
+Once the PBS script has been created, simply submit it to the batch
+queuing system as usual:
+
+  $ qsub runsq
+
+You can also use the script in a multi-node interactive session on the
+cluster, if you prefer.
+
+
+OUTPUT/LOG FILES:
+
+Assuming that all goes well, tasks from the task file will be scheduled
+automatically onto the cpus assigned by Torque/Moab until all the tasks
+have completed. At that time, the PBS job will terminate, and you'll see
+several summary files:
+
+    * PBS_<Name>_out.txt: this is a log from the SimpleQueue driver.
+      It is primarily intended as an aid in debugging.
+
+    * <TaskFile>.STATUS: this contains a list of all the jobs that were
+      run, including exit status, start time, end time, pid, node run
+      on, and the command run.
+
+    * <TaskFile>.REMAINING: Failed or uncompleted tasks will be listed
+      in this file in the same format as in your task file, so that
+      those tasks can be easily rerun. You should review the status
+      files related to these tasks to understand the cause.  This list
+      is provided for convenience. It is always a good idea to scan
+      <TaskFile>.STATUS to double check which tasks did in fact complete
+      with a normal exit status.
+
+    * <TaskFile>.ROGUES: The SimpleQueue system attempts to ensure that
+      all commands launched eventually exit (normally or abnormally).
+      If it fails to get confirmation that a command has exited,
+      information about the command will be written to this file. For
+      interactive executions, this information can be used to hunt down
+      and kill run away processes. (They should be killed automatically
+      by Torque for batch jobs.)
+
+Please contact Andrew Sherman (andrew.sherman@yale.edu; 436-9171) or
+Steve Weston (stephen.weston@yale.edu; 432-1236) for additional
+information.
