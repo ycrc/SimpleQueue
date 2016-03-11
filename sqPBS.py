@@ -53,26 +53,9 @@ def defqueue(walltime):
 # Set cluster dependent values
 domain = os.environ.get('DOMAIN')
 sq_python_dir = os.environ.get('SQ_PYTHON_DIR')
-if domain == 'bulldogk':
-    defaultmempernode = 15
-    modload = 'module load MPI/OpenMPI/1.4.5\nexport SQ_PYTHON_DIR="%s"\n' % sq_python_dir
-elif domain == 'bulldogj':
-    defaultmempernode = 15
-    modload = 'module load MPI/OpenMPI/1.4.5\nexport SQ_PYTHON_DIR="%s"\n' % sq_python_dir
-elif domain == 'bulldogl':
-    defaultmempernode = 47
-    modload = 'module load MPI/OpenMPI/1.4.4\nexport SQ_PYTHON_DIR="%s"\n' % sq_python_dir
-elif domain == 'omega':
-    defaultmempernode = 35
-    modload = 'module unload MPI Langs Compilers\nmodule load MPI/OpenMPI/1.4.4\nexport SQ_PYTHON_DIR="%s"\n' % sq_python_dir
-elif domain is None:
-    sys.stderr.write('Warning: DOMAIN variable is not set\n')
-    defaultmempernode = 15
-    modload = ''
-else:
-    sys.stderr.write('Warning: unrecognized DOMAIN: %s\n' % domain)
-    defaultmempernode = 15
-    modload = ''
+sq_nws_dir = os.environ.get('SQ_NWS_DIR')
+defaultmempernode = 35
+modload = 'module unload MPI Langs Compilers\nmodule load MPI/OpenMPI/1.4.4\nexport SQ_PYTHON_DIR="%s"\nexport SQ_NWS_DIR="%s"\n' % (sq_python_dir, sq_nws_dir)
 
 opts = optparse.OptionParser(usage='''%prog OPTIONS TaskFile
 
