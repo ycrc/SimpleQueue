@@ -8,7 +8,7 @@ myHost = socket.gethostname()
 
 prog, verbose, logFilePath, key, nwssHost, nwssPort = sys.argv
 
-engineNum = os.getenv('OMPI_COMM_WORLD_RANK')
+engineNum = os.getenv('SLURM_PROCID')
 
 outbase = '%s/%s_%s'%(logFilePath, myHost, engineNum)
 

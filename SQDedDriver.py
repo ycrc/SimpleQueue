@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import logging, nws, os, pnwsst, Queue, signal, subprocess, sys, thread, threading, time
+import logging, nws, os, pnwsst, Queue, signal, subprocess, sys, thread, threading, time, re
 LogC, LogD, LogE, LogI, LogW = logging.critical, logging.debug, logging.error, logging.info, logging.warning
 
 # we assume that the helper script lives in the same directory as this script.
@@ -12,15 +12,26 @@ LaunchDelay = float(os.environ.get('SQLaunchDelay', '.2'))
 # XXX is set to 0?  Seems odd, so I'm commenting it out. -sbw
 #if not LaunchDelay: LauncDelay
 
-# this variant is for PBS (or similar) use only.
+# this variant is for Slurm (or similar) use only.
+
+def getcpus():
+    s=os.getenv("SLURM_JOB_CPUS_PER_NODE")
+    for e in s.split(','):
+        mo=re.match('^(\d+)\(x(\d+)\)$', s)
+        if mo:
+            return int(mo.group(1))*int(mo.group(2))
+        mo=re.match('^(\d+)$', s)
+        if mo:
+            return int(mo.group(1))
+    raise Exception("Couldn't parse")
+        
 
 def launchcmd():
-    ecount = 0
-    nodefile = os.getenv('PBS_NODEFILE') or os.getenv('LSB_DJOB_HOSTFILE')
-    for n in open(nodefile):
-        n = n.strip()
-        if n and n[0] != '#': ecount += 1
+    return ["srun"]
 
+'''
+def launchcmd():
+    ecount = getcpus()
     cmdv = ['mpirun']
     cmdv += ['-n', str(ecount)]
     wdir = os.getenv('HOME')
@@ -35,6 +46,7 @@ def launchcmd():
     #     cmdv += ['-x', 'LD_LIBRARY_PATH=' + ldlibpath]
 
     return cmdv
+'''
 
 class TaskStream:
     def __init__(self, f):
@@ -107,12 +119,7 @@ class EnginePool:
         self.receivedShutdown = False
 
         # we only learn from this how many engines to expect to hear from.
-        ecount = 0
-        nodefile = os.getenv('PBS_NODEFILE') or os.getenv('LSB_DJOB_HOSTFILE')
-        for n in open(nodefile):
-            n = n.strip()
-            if n and n[0] != '#': ecount += 1
-
+        ecount = getcpus()
         limit = oArgs.maxTasksPerNode
         h2e = {}
         wsSem.acquire()
