@@ -14,39 +14,11 @@ LaunchDelay = float(os.environ.get('SQLaunchDelay', '.2'))
 
 # this variant is for Slurm (or similar) use only.
 
-def getcpus():
-    s=os.getenv("SLURM_JOB_CPUS_PER_NODE")
-    for e in s.split(','):
-        mo=re.match('^(\d+)\(x(\d+)\)$', s)
-        if mo:
-            return int(mo.group(1))*int(mo.group(2))
-        mo=re.match('^(\d+)$', s)
-        if mo:
-            return int(mo.group(1))
-    raise Exception("Couldn't parse")
-        
+def gettasks():
+    return int(os.getenv("SLURM_NTASKS"))
 
 def launchcmd():
     return ["srun"]
-
-'''
-def launchcmd():
-    ecount = getcpus()
-    cmdv = ['mpirun']
-    cmdv += ['-n', str(ecount)]
-    wdir = os.getenv('HOME')
-    if wdir:
-        cmdv += ['-wdir', wdir]
-
-    ## It doesn't seem necessary to explicitly propagate LD_LIBRARY_PATH
-    ## when using mpirun.
-
-    # ldlibpath = os.getenv('LD_LIBRARY_PATH')
-    # if ldlibpath:
-    #     cmdv += ['-x', 'LD_LIBRARY_PATH=' + ldlibpath]
-
-    return cmdv
-'''
 
 class TaskStream:
     def __init__(self, f):
@@ -119,7 +91,7 @@ class EnginePool:
         self.receivedShutdown = False
 
         # we only learn from this how many engines to expect to hear from.
-        ecount = getcpus()
+        ecount = gettasks()
         limit = oArgs.maxTasksPerNode
         h2e = {}
         wsSem.acquire()

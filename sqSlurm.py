@@ -35,7 +35,7 @@ def defqueue(walltime):
 
 # Set cluster dependent values
 defaultmempernode = 1024
-modload = 'module load Pypkgs/NWS Langs/Python/2.7.11'
+modload = 'module load Langs/Python/2.7.11 Pypkgs/NWS'
 
 opts = optparse.OptionParser(usage='''%prog OPTIONS TaskFile
 
@@ -60,14 +60,12 @@ NOTE: You must submit the generated script to Slurm to actually run the job.
 MaxProcsPerNode is forced to be no larger than the number of CPUs per node.
 If not specified, MaxProcsPerNode defaults to the number of CPUs per node.''')
 
-opts.add_option('-n', '--nodes', type='int', dest='nodes', default=1,
-  help='Number of nodes to use. Not required. Defaults to %default.')
-opts.add_option('-p', '--ppn', type='int', dest='ppn', default=20,
-  help='Number of CPUs to request per node. Defaults to %default.')
-opts.add_option('-t', '--tpn', type='int', dest='tpn',
-  help='Maximum number of concurrent tasks per node. Not required. Defaults to ncpus.')
-opts.add_option('-m', '--mem', type='int', dest='mem', default=1,
-  help='Memory per node. Not required. Defaults to %default')
+opts.add_option('-n', '--workers', type='int', dest='workers', default=1,
+  help='Number of workers to use. Not required. Defaults to %default.')
+opts.add_option('-c', '--cores', type='int', dest='cores', default=1,
+  help='Number of cores to request per worker. Defaults to %default.')
+opts.add_option('-m', '--mem', dest='mem', default="1G",
+  help='Memory per worker. Not required. Defaults to %default')
 opts.add_option('-w', '--walltime', dest='walltime', default='1:00:00',
   help='Walltime to request for the Slurm Job in form [[D-]HH:]MM:SS. Not required. Defaults to %default.')
 opts.add_option('-q', '--queue', dest='queue', default='general',
@@ -85,7 +83,7 @@ if len(pArgs) != 1:
 # This is eventually passed as an argument to the driver script
 jobFile = pArgs[0]
 
-# Set the variables title, nodes, ncpus, queuespec, memspec,
+# Set the variables title, workers, ncpus, queuespec, memspec,
 # walltimespec and nodespec, which will be used in the
 # following lines from SQDedSlurmScriptTemplate.sh:
 
@@ -94,25 +92,16 @@ jobFile = pArgs[0]
 # Notice that queuespec is a bit sneaky
 
 title = oArgs.name
-nodes = oArgs.nodes
-
-ncpus = 20
+workers = oArgs.workers
+cores = oArgs.cores
 
 queue = oArgs.queue
 
-mem = oArgs.mem * 1024 # slurm specifies memory in MB
+mem = oArgs.mem # pass mem arg in as is, for Slurm to interpret
 
 walltime = oArgs.walltime
 
 logdir = os.path.abspath(oArgs.logdir)
-
-# Compute the "max jobs (or tasks) per node", which is passed as
-# an argument to the driver, SQDedDriver.py.  It isn't used for
-# settings any PBS directives.
-if oArgs.tpn:
-    mtpn = min(oArgs.tpn, ncpus)
-else:
-    mtpn = ncpus
 
 if os.getenv('SQ_PYTHON'):
     pythoninterp = os.getenv('SQ_PYTHON')
@@ -122,21 +111,20 @@ else:
 sq_python_path = os.getenv('SQ_PYTHON_PATH', '')
 
 # Issue a warning if the task file doesn't exist, or if they've
-# specified more nodes than makes sense for the number of tasks
+# specified more workers than makes sense for the number of tasks
 # in the task file.
+
 if os.path.exists(jobFile):
     ntasks = len([x for x in open(jobFile).readlines() if x.strip() and x.strip()[0] != '#'])
-    maxnodes = int(ceil(ntasks / float(mtpn)))
-    if nodes > maxnodes:
-        sys.stderr.write('Warning: %s contains %d tasks, which warrants '
-                         'at most %d nodes of %d cores, but you requested '
+    if workers > ntasks:
+        sys.stderr.write('Warning: %s contains %d tasks, but you requested '
                          '%d nodes\n' % \
-                         (jobFile, ntasks, maxnodes, mtpn, nodes))
+                         (jobFile, ntasks, workers))
     else:
-        taskspercore = ntasks / float(nodes * mtpn)
+        tasksperworker = ntasks / float(workers)
         sys.stderr.write('Info: %s contains %d tasks\n' % (jobFile, ntasks))
-        sys.stderr.write('Info: average tasks per core: %.1f\n' % taskspercore)
-        if nodes > 1 and taskspercore < 1.0:
+        sys.stderr.write('Info: average tasks per worker: %.1f\n' % tasksperworker)
+        if tasksperworker < 1.0:
             sys.stderr.write('Info: you might consider using fewer nodes\n')
 else:
     sys.stderr.write('Warning: %s does not currently exist\n' % (jobFile,))
