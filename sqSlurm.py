@@ -35,7 +35,7 @@ def defqueue(walltime):
 
 # Set cluster dependent values
 defaultmempernode = 1024
-modload = 'module load Langs/Python/2.7.11 Pypkgs/NWS'
+modload = 'module load NWS'
 
 opts = optparse.OptionParser(usage='''%prog OPTIONS TaskFile
 
