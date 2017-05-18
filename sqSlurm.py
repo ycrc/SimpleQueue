@@ -134,4 +134,4 @@ myDir = os.path.dirname(os.path.realpath(__file__))+os.path.sep
 sqScript = myDir + 'SQDedDriver.py'
 SlurmScript = open(myDir + 'SQDedSlurmScriptTemplate.sh').read()%locals()
 
-print(SlurmScript, end=' ')
+print(SlurmScript)
