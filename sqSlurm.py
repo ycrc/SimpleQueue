@@ -35,7 +35,7 @@ def defqueue(walltime):
 
 # Set cluster dependent values
 defaultmempernode = 1024
-modload = 'module load Python/2.7.11-foss-2016b'
+modload = 'module load Python/2.7.11-foss-2016a'
 
 opts = optparse.OptionParser(usage='''%prog OPTIONS TaskFile
 
